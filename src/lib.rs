@@ -87,7 +87,8 @@ mod structure;
 pub mod blockdevice;
 pub mod fat;
 pub mod filesystem;
-pub mod sdmmc;
+// pub mod sdmmc;
+pub mod sdmmc_async;
 pub mod sdmmc_proto;
 
 pub use crate::blockdevice::{Block, BlockCount, BlockDevice, BlockIdx};
@@ -96,8 +97,8 @@ pub use crate::filesystem::{
     Attributes, Cluster, DirEntry, Directory, File, FilenameError, Mode, ShortFileName, TimeSource,
     Timestamp, MAX_FILE_SIZE,
 };
-pub use crate::sdmmc::Error as SdMmcError;
-pub use crate::sdmmc::{BlockSpi, SdMmcSpi};
+pub use crate::sdmmc_async::Error as SdMmcError;
+pub use crate::sdmmc_async::{BlockSpi, SdMmcSpi};
 
 // ****************************************************************************
 //
