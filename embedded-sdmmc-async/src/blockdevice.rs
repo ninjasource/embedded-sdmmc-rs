@@ -39,16 +39,16 @@ pub trait BlockDevice {
     /// The errors that the `BlockDevice` can return. Must be debug formattable.
     type Error: core::fmt::Debug;
     /// Read one or more blocks, starting at the given block index.
-    fn read(
+    async fn read(
         &self,
         blocks: &mut [Block],
         start_block_idx: BlockIdx,
         reason: &str,
     ) -> Result<(), Self::Error>;
     /// Write one or more blocks, starting at the given block index.
-    fn write(&self, blocks: &[Block], start_block_idx: BlockIdx) -> Result<(), Self::Error>;
+    async fn write(&self, blocks: &[Block], start_block_idx: BlockIdx) -> Result<(), Self::Error>;
     /// Determine how many blocks this device can hold.
-    fn num_blocks(&self) -> Result<BlockCount, Self::Error>;
+    async fn num_blocks(&self) -> Result<BlockCount, Self::Error>;
 }
 
 impl Block {

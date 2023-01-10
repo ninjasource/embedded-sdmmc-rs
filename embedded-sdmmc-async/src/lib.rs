@@ -68,10 +68,10 @@
 //!
 //! Make sure that either the `log` feature or the `defmt-log` feature is enabled.
 
-#![allow(incomplete_features)]
-#![feature(type_alias_impl_trait, async_fn_in_trait)]
 #![cfg_attr(not(test), no_std)]
 #![deny(missing_docs)]
+#![feature(type_alias_impl_trait, async_fn_in_trait)]
+#![allow(unused_imports, incomplete_features, unused)]
 
 // ****************************************************************************
 //
@@ -98,6 +98,8 @@ pub use crate::filesystem::{
     Attributes, Cluster, DirEntry, Directory, File, FilenameError, Mode, ShortFileName, TimeSource,
     Timestamp, MAX_FILE_SIZE,
 };
+pub use crate::sdmmc::Error as SdMmcError;
+pub use crate::sdmmc::{BlockSpi, SdMmcSpi};
 
 // ****************************************************************************
 //
