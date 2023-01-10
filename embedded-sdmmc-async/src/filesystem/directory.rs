@@ -34,6 +34,7 @@ pub struct Directory {
     /// The starting point of the directory listing.
     pub(crate) cluster: Cluster,
     /// Dir Entry of this directory, None for the root directory
+    #[allow(dead_code)]
     pub(crate) entry: Option<DirEntry>,
 }
 

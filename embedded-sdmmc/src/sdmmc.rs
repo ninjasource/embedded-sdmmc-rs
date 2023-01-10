@@ -24,7 +24,7 @@ const DEFAULT_DELAY_COUNT: u32 = 32_000;
 /// bytes without Chip Select asserted (which puts the card into SPI mode).
 pub struct SdMmcSpi<SPI, CS>
 where
-    SPI: embedded_hal_async::spi::SpiBus<u8>,
+    SPI: embedded_hal::blocking::spi::Transfer<u8>,
     CS: embedded_hal::digital::v2::OutputPin,
     <SPI as embedded_hal::blocking::spi::Transfer<u8>>::Error: core::fmt::Debug,
 {
@@ -139,7 +139,7 @@ impl Default for AcquireOpts {
 
 impl<SPI, CS> SdMmcSpi<SPI, CS>
 where
-    SPI: embedded_hal_async::spi::SpiBus<u8>,
+    SPI: embedded_hal::blocking::spi::Transfer<u8>,
     CS: embedded_hal::digital::v2::OutputPin,
     <SPI as embedded_hal::blocking::spi::Transfer<u8>>::Error: core::fmt::Debug,
 {
@@ -165,110 +165,106 @@ where
     }
 
     /// Initializes the card into a known state
-    pub async fn acquire(&mut self) -> Result<BlockSpi<SPI, CS>, Error> {
-        self.acquire_with_opts(Default::default()).await
+    pub fn acquire(&mut self) -> Result<BlockSpi<SPI, CS>, Error> {
+        self.acquire_with_opts(Default::default())
     }
 
     /// Initializes the card into a known state
-    pub async fn acquire_with_opts(
-        &mut self,
-        options: AcquireOpts,
-    ) -> Result<BlockSpi<SPI, CS>, Error> {
+    pub fn acquire_with_opts(&mut self, options: AcquireOpts) -> Result<BlockSpi<SPI, CS>, Error> {
         debug!("acquiring card with opts: {:?}", options);
-        let result = self.do_aquire(options).await;
+        let f = |s: &mut Self| {
+            // Assume it hasn't worked
+            s.state = State::Error;
+            trace!("Reset card..");
+            // Supply minimum of 74 clock cycles without CS asserted.
+            s.cs_high()?;
+            for _ in 0..10 {
+                s.send(0xFF)?;
+            }
+            // Assert CS
+            s.cs_low()?;
+            // Enter SPI mode
+            let mut delay = Delay::new();
+            let mut attempts = 32;
+            while attempts > 0 {
+                trace!("Enter SPI mode, attempt: {}..", 32i32 - attempts);
+
+                match s.card_command(CMD0, 0) {
+                    Err(Error::TimeoutCommand(0)) => {
+                        // Try again?
+                        warn!("Timed out, trying again..");
+                        attempts -= 1;
+                    }
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    Ok(R1_IDLE_STATE) => {
+                        break;
+                    }
+                    Ok(r) => {
+                        // Try again
+                        warn!("Got response: {:x}, trying again..", r);
+                    }
+                }
+
+                delay.delay(Error::TimeoutCommand(CMD0))?;
+            }
+            if attempts == 0 {
+                return Err(Error::CardNotFound);
+            }
+            // Enable CRC
+            debug!("Enable CRC: {}", options.require_crc);
+            if s.card_command(CMD59, 1)? != R1_IDLE_STATE && options.require_crc {
+                return Err(Error::CantEnableCRC);
+            }
+            // Check card version
+            let mut delay = Delay::new();
+            loop {
+                if s.card_command(CMD8, 0x1AA)? == (R1_ILLEGAL_COMMAND | R1_IDLE_STATE) {
+                    s.card_type = CardType::SD1;
+                    break;
+                }
+                s.receive()?;
+                s.receive()?;
+                s.receive()?;
+                let status = s.receive()?;
+                if status == 0xAA {
+                    s.card_type = CardType::SD2;
+                    break;
+                }
+                delay.delay(Error::TimeoutCommand(CMD8))?;
+            }
+            debug!("Card version: {:?}", s.card_type);
+
+            let arg = match s.card_type {
+                CardType::SD1 => 0,
+                CardType::SD2 | CardType::SDHC => 0x4000_0000,
+            };
+
+            let mut delay = Delay::new();
+            while s.card_acmd(ACMD41, arg)? != R1_READY_STATE {
+                delay.delay(Error::TimeoutACommand(ACMD41))?;
+            }
+
+            if s.card_type == CardType::SD2 {
+                if s.card_command(CMD58, 0)? != 0 {
+                    return Err(Error::Cmd58Error);
+                }
+                if (s.receive()? & 0xC0) == 0xC0 {
+                    s.card_type = CardType::SDHC;
+                }
+                // Discard other three bytes
+                s.receive()?;
+                s.receive()?;
+                s.receive()?;
+            }
+            s.state = State::Idle;
+            Ok(())
+        };
+        let result = f(self);
         self.cs_high()?;
         let _ = self.receive();
         result.map(move |()| BlockSpi(self))
-    }
-
-    async fn do_aquire(&mut self, options: AcquireOpts) -> Result<(), Error> {
-        // Assume it hasn't worked
-        s.state = State::Error;
-        trace!("Reset card..");
-        // Supply minimum of 74 clock cycles without CS asserted.
-        s.cs_high()?;
-        for _ in 0..10 {
-            s.send(0xFF)?;
-        }
-        // Assert CS
-        s.cs_low()?;
-        // Enter SPI mode
-        let mut delay = Delay::new();
-        let mut attempts = 32;
-        while attempts > 0 {
-            trace!("Enter SPI mode, attempt: {}..", 32i32 - attempts);
-
-            match s.card_command(CMD0, 0) {
-                Err(Error::TimeoutCommand(0)) => {
-                    // Try again?
-                    warn!("Timed out, trying again..");
-                    attempts -= 1;
-                }
-                Err(e) => {
-                    return Err(e);
-                }
-                Ok(R1_IDLE_STATE) => {
-                    break;
-                }
-                Ok(r) => {
-                    // Try again
-                    warn!("Got response: {:x}, trying again..", r);
-                }
-            }
-
-            delay.delay(Error::TimeoutCommand(CMD0))?;
-        }
-        if attempts == 0 {
-            return Err(Error::CardNotFound);
-        }
-        // Enable CRC
-        debug!("Enable CRC: {}", options.require_crc);
-        if s.card_command(CMD59, 1)? != R1_IDLE_STATE && options.require_crc {
-            return Err(Error::CantEnableCRC);
-        }
-        // Check card version
-        let mut delay = Delay::new();
-        loop {
-            if s.card_command(CMD8, 0x1AA)? == (R1_ILLEGAL_COMMAND | R1_IDLE_STATE) {
-                s.card_type = CardType::SD1;
-                break;
-            }
-            s.receive()?;
-            s.receive()?;
-            s.receive()?;
-            let status = s.receive()?;
-            if status == 0xAA {
-                s.card_type = CardType::SD2;
-                break;
-            }
-            delay.delay(Error::TimeoutCommand(CMD8))?;
-        }
-        debug!("Card version: {:?}", s.card_type);
-
-        let arg = match s.card_type {
-            CardType::SD1 => 0,
-            CardType::SD2 | CardType::SDHC => 0x4000_0000,
-        };
-
-        let mut delay = Delay::new();
-        while s.card_acmd(ACMD41, arg)? != R1_READY_STATE {
-            delay.delay(Error::TimeoutACommand(ACMD41))?;
-        }
-
-        if s.card_type == CardType::SD2 {
-            if s.card_command(CMD58, 0)? != 0 {
-                return Err(Error::Cmd58Error);
-            }
-            if (s.receive()? & 0xC0) == 0xC0 {
-                s.card_type = CardType::SDHC;
-            }
-            // Discard other three bytes
-            s.receive()?;
-            s.receive()?;
-            s.receive()?;
-        }
-        s.state = State::Idle;
-        Ok(())
     }
 
     /// Perform a function that might error with the chipselect low.
@@ -334,23 +330,22 @@ where
     }
 
     /// Receive a byte from the SD card by clocking in an 0xFF byte.
-    async fn receive(&self) -> Result<u8, Error> {
-        self.transfer(0xFF).await
+    fn receive(&self) -> Result<u8, Error> {
+        self.transfer(0xFF)
     }
 
     /// Send a byte from the SD card.
-    async fn send(&self, out: u8) -> Result<(), Error> {
-        let _ = self.transfer(out).await?;
+    fn send(&self, out: u8) -> Result<(), Error> {
+        let _ = self.transfer(out)?;
         Ok(())
     }
 
     /// Send one byte and receive one byte.
-    async fn transfer(&self, out: u8) -> Result<u8, Error> {
+    fn transfer(&self, out: u8) -> Result<u8, Error> {
         let mut spi = self.spi.borrow_mut();
-        spi.transfer_in_place(&mut [out])
-            .await
-            .map_err(|_e| Error::Transport)?;
-        Ok(out[0])
+        spi.transfer(&mut [out])
+            .map(|b| b[0])
+            .map_err(|_e| Error::Transport)
     }
 
     /// Spin until the card returns 0xFF, or we spin too many times and

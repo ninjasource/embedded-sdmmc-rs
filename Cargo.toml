@@ -1,27 +1,7 @@
-[package]
-name = "embedded-sdmmc"
-version = "0.4.0"
-authors = ["Jonathan 'theJPster' Pallant <github@thejpster.org.uk>"]
-description = "A basic SD/MMC driver for Embedded Rust."
-keywords = ["sdcard", "mmc", "embedded", "fat32"]
-categories = ["embedded", "no-std"]
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/rust-embedded-community/embedded-sdmmc-rs"
-edition = "2021"
-readme = "README.md"
+[workspace]
 
-[dependencies]
-#embedded-hal = "0.2.3"
-embedded-hal = { git = "https://github.com/rust-embedded/embedded-hal.git" }
-embedded-hal-async = { git = "https://github.com/rust-embedded/embedded-hal.git" }
-byteorder = { version = "1", default-features = false }
-log = { version = "0.4", default-features = false, optional = true }
-defmt = { version = "0.3", optional = true }
-
-[dev-dependencies]
-hex-literal = "0.3"
-env_logger = "0.9"
-
-[features]
-defmt-log = [ "defmt" ]
-default = [ "log" ]
+# TODO: CI should remove lines containing 'nightly-only' when not building with nightly.
+members = [
+    "embedded-sdmmc",
+    "embedded-sdmmc-async",  # nightly-only
+]
