@@ -16,7 +16,7 @@ use embedded_hal_async::spi::SpiBus;
 use log::{debug, trace, warn};
 
 #[cfg(feature = "defmt-log")]
-use defmt::{debug, info, trace, warn};
+use defmt::{debug, trace, warn};
 
 const DEFAULT_DELAY_COUNT: u32 = 32_000;
 
