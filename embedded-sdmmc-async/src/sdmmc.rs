@@ -13,7 +13,7 @@ use embedded_hal::digital::v2::OutputPin;
 use embedded_hal_async::spi::SpiBus;
 
 #[cfg(feature = "log")]
-use log::{debug, info, trace, warn};
+use log::{debug, trace, warn};
 
 #[cfg(feature = "defmt-log")]
 use defmt::{debug, info, trace, warn};
@@ -276,30 +276,6 @@ where
 
         self.state = State::Idle;
         Ok(())
-    }
-
-    async fn command_with_retry(&self, command: u8, arg: u32) -> Result<u8, Error> {
-        let mut delay = Delay::new();
-        let mut attempts = 32;
-        while attempts > 0 {
-            trace!("Card command {}, attempt: {}..", command, 32i32 - attempts);
-
-            match self.card_command(command, arg).await {
-                Err(Error::TimeoutCommand(command)) => {
-                    // Try again?
-                    warn!("Timed out, trying again..");
-                    attempts -= 1;
-                }
-                Err(e) => {
-                    return Err(e);
-                }
-                Ok(r) => return Ok(r),
-            }
-
-            delay.delay(Error::TimeoutCommand(command))?;
-        }
-
-        Err(Error::CommandRetryExhausted(command))
     }
 
     /// Perform the 7-bit CRC used on the SD card

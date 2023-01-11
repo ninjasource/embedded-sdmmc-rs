@@ -12,10 +12,10 @@ readme = "README.md"
 
 [dependencies]
 embedded-hal = "0.2.3"
+embedded-hal-async = { version = "=0.2.0-alpha.0" }
 byteorder = { version = "1", default-features = false }
 log = { version = "0.4", default-features = false, optional = true }
 defmt = { version = "0.3", optional = true }
-embedded-hal-async = { version = "=0.2.0-alpha.0" }
 
 [dev-dependencies]
 hex-literal = "0.3"

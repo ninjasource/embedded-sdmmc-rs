@@ -70,8 +70,8 @@
 
 #![cfg_attr(not(test), no_std)]
 #![deny(missing_docs)]
+#![allow(incomplete_features)] // for async_fn_in_trait feature
 #![feature(type_alias_impl_trait, async_fn_in_trait)]
-#![allow(unused_imports, incomplete_features, unused)]
 
 // ****************************************************************************
 //
