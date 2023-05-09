@@ -11,8 +11,8 @@ edition = "2021"
 readme = "README.md"
 
 [dependencies]
-embedded-hal = "0.2.3"
-embedded-hal-async = { version = "=0.2.0-alpha.0" }
+embedded-hal = { version = "0.2.7", default-features = false }
+embedded-hal-async = { version = "0.2.0-alpha.1", default-features = false }
 byteorder = { version = "1", default-features = false }
 log = { version = "0.4", default-features = false, optional = true }
 defmt = { version = "0.3", optional = true }

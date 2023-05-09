@@ -1,0 +1,14 @@
+{
+  "editor.formatOnSave": true,
+  "[toml]": {
+    "editor.formatOnSave": false
+  },
+  "rust-analyzer.check.allTargets": false,
+  "rust-analyzer.check.noDefaultFeatures": true,
+  "rust-analyzer.cargo.noDefaultFeatures": true,
+  "rust-analyzer.cargo.target": "thumbv7em-none-eabi",
+  //"rust-analyzer.cargo.target": "thumbv8m.main-none-eabihf",
+  "rust-analyzer.cargo.features": [
+    "nightly",
+  ],
+}

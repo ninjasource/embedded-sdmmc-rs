@@ -148,7 +148,7 @@ impl core::fmt::Debug for Block {
             }
             write!(fmt, " ")?;
             for &b in line {
-                if (0x20..=0x7F).contains(&b) {
+                if b >= 0x20 && b <= 0x7F {
                     write!(fmt, "{}", b as char)?;
                 } else {
                     write!(fmt, ".")?;

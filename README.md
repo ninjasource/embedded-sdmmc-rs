@@ -6,6 +6,14 @@ library. It is written in pure-Rust, is `#![no_std]` and does not use `alloc`
 or `collections` to keep the memory footprint low. In the first instance it is
 designed for readability and simplicity over performance.
 
+## Troubleshooting 
+
+If you open this crate in the root in vscode (i.e. the folder this file is in) you will most likely experience a lot of compiler errors. 
+This is because I have not been able to figure out how to set up a project to use stable AND nightly at the same time.
+If you are using this fork then you are most likely using the async part of it. 
+Your best bet is to simply open your editor in the `embedded-sdmmc-async` folder and `rust-analyzer` will play nicely with it.
+
+
 ## Using the crate
 
 You will need something that implements the `BlockDevice` trait, which can read and write the 512-byte blocks (or sectors) from your card. If you were to implement this over USB Mass Storage, there's no reason this crate couldn't work with a USB Thumb Drive, but we only supply a `BlockDevice` suitable for reading SD and SDHC cards over SPI.
