@@ -6,6 +6,12 @@ library. It is written in pure-Rust, is `#![no_std]` and does not use `alloc`
 or `collections` to keep the memory footprint low. In the first instance it is
 designed for readability and simplicity over performance.
 
+## Async support
+
+The primary purpose of this fork is to experiment with an async version of this repo. 
+Please see https://github.com/ninjasource/audio-i2s-sdmmc-nrf5340-async.git for an example of how to use it. 
+Please note that the async traits used are alpha and you also need to use nightly so this branch will not remain in a working state for long.
+
 ## Troubleshooting 
 
 If you open this crate in the root in vscode (i.e. the folder this file is in) you will most likely experience a lot of compiler errors. 
