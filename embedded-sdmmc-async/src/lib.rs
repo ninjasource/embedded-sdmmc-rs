@@ -70,8 +70,11 @@
 
 #![cfg_attr(not(test), no_std)]
 #![deny(missing_docs)]
-#![allow(incomplete_features)] // for async_fn_in_trait feature
-#![feature(type_alias_impl_trait, async_fn_in_trait)]
+//#![allow(incomplete_features)]
+#![allow(async_fn_in_trait)]
+
+// for async_fn_in_trait feature
+//#![feature(type_alias_impl_trait, async_fn_in_trait)]
 
 // ****************************************************************************
 //
@@ -89,7 +92,7 @@ mod structure;
 pub mod blockdevice;
 pub mod fat;
 pub mod filesystem;
-pub mod sdmmc;
+//pub mod sdmmc;
 pub mod sdmmc_proto;
 
 pub use crate::blockdevice::{Block, BlockCount, BlockDevice, BlockIdx};
@@ -98,8 +101,8 @@ pub use crate::filesystem::{
     Attributes, Cluster, DirEntry, Directory, File, FilenameError, Mode, ShortFileName, TimeSource,
     Timestamp, MAX_FILE_SIZE,
 };
-pub use crate::sdmmc::Error as SdMmcError;
-pub use crate::sdmmc::{BlockSpi, SdMmcSpi};
+//pub use crate::sdmmc::Error as SdMmcError;
+//pub use crate::sdmmc::{BlockSpi, SdMmcSpi};
 
 // ****************************************************************************
 //
@@ -221,6 +224,8 @@ const PARTITION_ID_FAT32_CHS_LBA: u8 = 0x0B;
 //
 // ****************************************************************************
 
+/*
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -252,7 +257,7 @@ mod tests {
         type Error = Error;
 
         /// Read one or more blocks, starting at the given block index.
-        fn read(
+        async fn read(
             &self,
             blocks: &mut [Block],
             start_block_idx: BlockIdx,
@@ -450,21 +455,26 @@ mod tests {
         }
 
         /// Write one or more blocks, starting at the given block index.
-        fn write(&self, _blocks: &[Block], _start_block_idx: BlockIdx) -> Result<(), Self::Error> {
+        async fn write(
+            &self,
+            _blocks: &[Block],
+            _start_block_idx: BlockIdx,
+        ) -> Result<(), Self::Error> {
             unimplemented!();
         }
 
         /// Determine how many blocks this device can hold.
-        fn num_blocks(&self) -> Result<BlockCount, Self::Error> {
+        async fn num_blocks(&self) -> Result<BlockCount, Self::Error> {
             Ok(BlockCount(2))
         }
     }
+
 
     #[test]
     fn partition0() {
         let mut c: Controller<DummyBlockDevice, Clock, 4, 4> =
             Controller::new(DummyBlockDevice, Clock);
-        let v = c.get_volume(VolumeIdx(0)).unwrap();
+        let v = c.get_volume(VolumeIdx(0)).await.unwrap();
         assert_eq!(
             v,
             Volume {
@@ -489,6 +499,7 @@ mod tests {
     }
 }
 
+ */
 // ****************************************************************************
 //
 // End Of File

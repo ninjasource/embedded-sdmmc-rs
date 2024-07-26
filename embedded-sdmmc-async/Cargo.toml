@@ -11,8 +11,9 @@ edition = "2021"
 readme = "README.md"
 
 [dependencies]
-embedded-hal = { version = "0.2.7", default-features = false }
-embedded-hal-async = { version = "0.2.0-alpha.1", default-features = false }
+#embedded-hal = { version = "0.2.7", default-features = false }
+embedded-hal-async = "1.0"
+#embedded-hal-async = { version = "0.2.0-alpha.1", default-features = false }
 byteorder = { version = "1", default-features = false }
 log = { version = "0.4", default-features = false, optional = true }
 defmt = { version = "0.3", optional = true }
@@ -22,5 +23,5 @@ hex-literal = "0.3"
 env_logger = "0.9"
 
 [features]
-default = [ "log" ]
-defmt-log = [ "defmt" ]
+default = ["log"]
+defmt-log = ["defmt"]
