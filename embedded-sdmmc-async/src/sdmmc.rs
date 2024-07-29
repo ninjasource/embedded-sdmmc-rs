@@ -203,6 +203,11 @@ where
                 Err(Error::TimeoutCommand(0)) => {
                     // Try again?
                     warn!("Timed out, trying again..");
+                    // Try flushing the card as done here: https://github.com/greiman/SdFat/blob/master/src/SdCard/SdSpiCard.cpp#L170,
+                    // https://github.com/rust-embedded-community/embedded-sdmmc-rs/pull/65#issuecomment-1270709448
+                    for _ in 0..0xFF {
+                        self.send(0xFF).await?;
+                    }
                     attempts -= 1;
                 }
                 Err(e) => {
@@ -249,6 +254,8 @@ where
             }
         }
 
+        debug!("Card version: {:?}", self.card_type);
+
         let arg = match self.card_type {
             CardType::SD1 => 0,
             CardType::SD2 | CardType::SDHC => 0x4000_0000,
@@ -275,6 +282,7 @@ where
         debug!("Card type: {:?}", self.card_type);
 
         self.state = State::Idle;
+
         Ok(())
     }
 
@@ -301,7 +309,9 @@ where
 
     /// Perform a command.
     async fn card_command(&self, command: u8, arg: u32) -> Result<u8, Error> {
-        self.wait_not_busy().await?;
+        if command != CMD0 && command != CMD12 {
+            self.wait_not_busy().await?;
+        }
 
         let mut write = [
             0x40 | command,
@@ -313,10 +323,9 @@ where
         ];
         write[5] = crc7(&write[0..5]);
 
-        let mut read = [0u8];
         self.spi
             .borrow_mut()
-            .transfer(&mut read, &write)
+            .write(&write)
             .await
             .map_err(|_| Error::Transport)?;
 
@@ -327,15 +336,8 @@ where
 
         for _ in 0..512 {
             let result = self.receive().await?;
-            if result == 0xFF {
-                continue;
-            }
-
             if (result & 0x80) == ERROR_OK {
                 return Ok(result);
-            } else {
-                warn!("Command {} result {}", command, result);
-                break;
             }
         }
 
